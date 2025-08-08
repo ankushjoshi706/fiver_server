@@ -28,7 +28,11 @@ const connect = async ()=>{
 }
 
 //------------All Middleware----
-app.use(cors({origin:"https://fiver-client-frontend.vercel.app", credentials: true}));
+app.use(cors({origin:[
+    'http://fiver-client-frontend.vercel.app',
+    'https://fiver-client-frontend.vercel.app', // Include both HTTP and HTTPS
+    'http://localhost:5173' // Keep for local development
+  ], credentials: true}));
 app.use(express.json());
 app.use(cookieParser());
 
