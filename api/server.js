@@ -31,7 +31,7 @@ const connect = async () => {
 // CORS setup
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://fiver-client-frontend.vercel.app/",
+  "https://fiver-client-frontend.vercel.app",
 ];
 
 app.use(cors({
