@@ -26,16 +26,16 @@ export const login = async (req, res, next) => {
     const isCorrect = bcrypt.compareSync(req.body.password, user.password);
     if (!isCorrect) return next(createError(400, "Wrong password or username!"));
 
-    const token = jwt.sign({
-      id: user._id,
-      isSeller: user.isSeller,
-    }, process.env.JWT_KEY);
+    const token = jwt.sign(
+      { id: user._id, isSeller: user.isSeller },
+      process.env.JWT_KEY
+    );
 
     const { password, ...info } = user._doc;
 
     res.cookie("accessToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // must be true on Render/Vercel
+      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     }).status(200).send(info);
