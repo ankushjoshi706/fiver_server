@@ -1,56 +1,53 @@
-import jwt  from "jsonwebtoken";
+// controllers/auth.controller.js
+import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import createError from "../utils/createError.js";
 
-export const register = async(req, res, next)=>{
-    
-    try{
-        //-------encrypting the password-------
-        const hash = bcrypt.hashSync(req.body.password, 5);
-        const newUser = new User({
-            ...req.body,
-            password: hash,
-        });
-
-        await newUser.save();
-        res.status(201).send("User has been created!");
-
-    }catch(err){
-        next(err);
-    }
+export const register = async (req, res, next) => {
+  try {
+    const hash = bcrypt.hashSync(req.body.password, 5);
+    const newUser = new User({
+      ...req.body,
+      password: hash,
+    });
+    await newUser.save();
+    res.status(201).send("User has been created!");
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const login = async(req, res, next)=>{
-    try{
-        const user = await User.findOne({ username: req.body.username });
+export const login = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ username: req.body.username });
+    if (!user) return next(createError(404, "User not found!"));
 
-       if(!user) return next( createError(404, "User not found!"));
-        
-        //-----Comparing the password for the database and the user entered------
-        const isCorrect = bcrypt.compareSync(req.body.password, user.password);
-        if(!isCorrect) return next( createError(404, "Wrong password or username!"));
-        
-        //---Creating the Json Token
-        const token = jwt.sign({
-            id:user._id, 
-            isSeller: user._isSeller,
-        }, process.env.JWT_KEY);
+    const isCorrect = bcrypt.compareSync(req.body.password, user.password);
+    if (!isCorrect) return next(createError(400, "Wrong password or username!"));
 
-        const {password, ...info} = user._doc;
-        res.cookie("accessToken", token, {
-            httpOnly:true,
-        }).status(200).send(info);
+    const token = jwt.sign({
+      id: user._id,
+      isSeller: user.isSeller,
+    }, process.env.JWT_KEY);
 
-    }catch(err){
-        next(err);
-        
-    }
+    const { password, ...info } = user._doc;
+
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // must be true on Render/Vercel
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    }).status(200).send(info);
+
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const logout = async(req, res)=>{
-    res.clearCookie("accessToken", {
-        sameSite: "none",
-        secure: true,
-    }).status(200).send("User has been logged out.");
+export const logout = async (req, res) => {
+  res.clearCookie("accessToken", {
+    sameSite: "none",
+    secure: true,
+  }).status(200).send("User has been logged out.");
 };
